@@ -24,10 +24,11 @@ jobs:
     - name: Install dependencies
       run: go mod tidy
 
-    - name: Run local server
-      run: |
-        CGO_ENABLED=0 GOOS=linux go run main.go &
-        sleep 100
-        go test -run ^TestApp$ ./tests
-        
-        
+    - name: Start server 
+      run: go run cmd/main.go web/ &
+
+    - name: Wait for server
+      run: sleep 100
+    
+    - name: Run tests
+      run: go test ./tests/...
