@@ -41,11 +41,12 @@ func main() {
 	slog.Info("opening database", "file", dbfile)
 
 	// Start SQLite DB
-	_, err := db.Start(dbfile)
+	database, err := db.Start(dbfile)
 	if err != nil {
 		slog.Error("failed to initialize database", "file", dbfile, "error", err)
-		panic(err)
+		os.Exit(1)
 	}
+	defer database.Close()
 
 	// Override default port with TODO_PORT
 	port := defaultPort
@@ -58,13 +59,15 @@ func main() {
 		}
 	}
 
+	pass := os.Getenv("TODO_PASSWORD")
+
 	http.Handle("/", http.FileServer(http.Dir(args[0])))
-	api.Init()
+	api.Init(pass)
 
 	addr := fmt.Sprintf(":%d", port)
 	slog.Info("server starting", "addr", addr, "static_dir", args[0])
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		slog.Error("server stopped", "error", err)
-		panic(err)
+		os.Exit(1)
 	}
 }

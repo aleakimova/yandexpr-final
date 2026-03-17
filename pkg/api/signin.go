@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -20,7 +21,15 @@ func signInHandler(w http.ResponseWriter, r *http.Request) {
 	pass := os.Getenv("TODO_PASSWORD")
 	if pass == "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(map[string]string{"token": ""})
+		data, err := json.Marshal(map[string]string{"token": ""})
+		if err != nil {
+			slog.Error("signIn: failed to marshal response", "error", err)
+			http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
+		if _, err = w.Write(data); err != nil {
+			slog.Error("signIn: failed to write response", "error", err)
+		}
 		return
 	}
 
@@ -29,13 +38,29 @@ func signInHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(map[string]string{"error": "Неверный пароль"})
+		data, err := json.Marshal(map[string]string{"error": "Неверный пароль"})
+		if err != nil {
+			slog.Error("signIn: failed to marshal response", "error", err)
+			http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
+		if _, err = w.Write(data); err != nil {
+			slog.Error("signIn: failed to write response", "error", err)
+		}
 		return
 	}
 
 	if req.Password != pass {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(map[string]string{"error": "Неверный пароль"})
+		data, err := json.Marshal(map[string]string{"error": "Неверный пароль"})
+		if err != nil {
+			slog.Error("signIn: failed to marshal response", "error", err)
+			http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
+		if _, err = w.Write(data); err != nil {
+			slog.Error("signIn: failed to write response", "error", err)
+		}
 		return
 	}
 
@@ -51,5 +76,13 @@ func signInHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	json.NewEncoder(w).Encode(map[string]string{"token": tokenStr})
+	data, err := json.Marshal(map[string]string{"token": tokenStr})
+	if err != nil {
+		slog.Error("signIn: failed to marshal response", "error", err)
+		http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusInternalServerError)
+		return
+	}
+	if _, err = w.Write(data); err != nil {
+		slog.Error("signIn: failed to write response", "error", err)
+	}
 }

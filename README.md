@@ -27,9 +27,10 @@
   - [`deletetask.go`](pkg/api/deletetask.go) --- `DELETE /api/task?id=` --- удаление
   - [`donetask.go`](pkg/api/donetask.go) --- `POST /api/task/done?id=` --- отметка выполнения
   - [`tasks.go`](pkg/api/tasks.go) --- `GET /api/tasks?search=` --- список задач
-  - [`auth.go`](pkg/api/auth.go) --- middleware JWT-аутентификации
   - [`signin.go`](pkg/api/signin.go) --- `POST /api/signin` --- вход
-  - [`log.go`](pkg/api/log.go) --- middleware логирования запросов (`logRequest`)
+- `pkg/middleware/` --- middleware:
+  - [`auth.go`](pkg/middleware/auth.go) --- middleware JWT-аутентификации
+  - [`log.go`](pkg/middleware/log.go) --- middleware логирования запросов (`LogRequest`)
 - [`internal/db/task.go`](internal/db/task.go) --- структура `Task` + SQL-операции
 - `tests/` --- интеграционные тесты (требуют запущенного сервера):
   - [`settings.go`](tests/settings.go)
@@ -81,6 +82,7 @@ http://localhost:7540
 | `TODO_PORT` | Порт сервера | `7540` |
 | `TODO_DB` | Путь к файлу базы данных | `scheduler.db` |
 | `TODO_PASSWORD` | Пароль для входа (если не задан --- аутентификация отключена) | --- |
+| `LOG_LEVEL` | Уровень логирования (`DEBUG`, `INFO`, `WARN`, `ERROR`) | `INFO` |
 
 Пример с паролем:
 ```bash
@@ -101,13 +103,13 @@ cd tests && go test ./... -v
 
 ### Настройка `tests/settings.go`
 
-| Параметр | Описание |
-|----|----|
-| `Port` | Порт сервера (по умолчанию `7540`) |
-| `DBFile` | Путь к БД (по умолчанию `"../scheduler.db"`) |
-| `FullNextDate` | `true` --- включить тесты для правил `w` и `m` |
-| `Search` | `true` --- включить тесты поиска |
-| `Token` | JWT-токен для тестов с аутентификацией (см. ниже) |
+| Параметр | По умолчанию | Описание |
+|----|----|----|
+| `Port` | `7540` | Порт сервера |
+| `DBFile` | `"../scheduler.db"` | Путь к БД |
+| `FullNextDate` | `true` | Включить тесты для правил `w` и `m` |
+| `Search` | `true` | Включить тесты поиска |
+| `Token` | `""` | JWT-токен для тестов с аутентификацией (см. ниже) |
 
 ### Тесты с аутентификацией
 

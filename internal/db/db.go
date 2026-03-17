@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"os"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 var instance *sql.DB
@@ -19,7 +19,7 @@ func Start(dbFile string) (*sql.DB, error) {
 	isNew := err != nil
 	slog.Debug("opening sqlite database", "file", dbFile, "new", isNew)
 
-	db, err := sql.Open("sqlite3", dbFile)
+	db, err := sql.Open("sqlite", dbFile)
 	if err != nil {
 		return nil, err
 	}
@@ -27,6 +27,7 @@ func Start(dbFile string) (*sql.DB, error) {
 	if isNew {
 		slog.Info("new database, creating scheduler table")
 		if err := createTable(db); err != nil {
+			db.Close()
 			return nil, err
 		}
 	} else {
@@ -41,10 +42,10 @@ func Start(dbFile string) (*sql.DB, error) {
 const schema = `
 CREATE TABLE IF NOT EXISTS scheduler (
     id      INTEGER PRIMARY KEY,
-    date    TEXT,
-    title   TEXT,
-    comment TEXT,
-    repeat  TEXT
+    date    TEXT CHECK(length(date) <= 8),
+    title   TEXT CHECK(length(title) <= 100),
+    comment TEXT CHECK(length(comment) <= 10000),
+    repeat  TEXT CHECK(length(repeat) <= 100)
 );`
 
 func createTable(db *sql.DB) error {

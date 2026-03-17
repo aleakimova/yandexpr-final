@@ -19,15 +19,31 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
 		slog.Warn("addTask: failed to decode request body", "error", err)
+		data, err := json.Marshal(map[string]string{"error": err.Error()})
+		if err != nil {
+			slog.Error("addTask: failed to marshal response", "error", err)
+			http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		if _, err = w.Write(data); err != nil {
+			slog.Error("addTask: failed to write response", "error", err)
+		}
 		return
 	}
 
 	if task.Title == "" {
 		slog.Warn("addTask: missing title")
+		data, err := json.Marshal(map[string]string{"error": "Не указан заголовок задачи"})
+		if err != nil {
+			slog.Error("addTask: failed to marshal response", "error", err)
+			http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Не указан заголовок задачи"})
+		if _, err = w.Write(data); err != nil {
+			slog.Error("addTask: failed to write response", "error", err)
+		}
 		return
 	}
 
@@ -43,15 +59,31 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 	parsed, err := time.Parse(dateFormat, task.Date)
 	if err != nil {
 		slog.Warn("addTask: invalid date format", "date", task.Date, "error", err)
+		data, err := json.Marshal(map[string]string{"error": fmt.Sprintf("invalid date: %v", err)})
+		if err != nil {
+			slog.Error("addTask: failed to marshal response", "error", err)
+			http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("invalid date: %v", err)})
+		if _, err = w.Write(data); err != nil {
+			slog.Error("addTask: failed to write response", "error", err)
+		}
 		return
 	}
 
 	if err := checkRepeatRule(task.Repeat); err != nil {
 		slog.Warn("addTask: invalid repeat rule", "repeat", task.Repeat, "error", err)
+		data, err := json.Marshal(map[string]string{"error": err.Error()})
+		if err != nil {
+			slog.Error("addTask: failed to marshal response", "error", err)
+			http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		if _, err = w.Write(data); err != nil {
+			slog.Error("addTask: failed to write response", "error", err)
+		}
 		return
 	}
 
@@ -63,8 +95,16 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 			task.Date, err = NextDate(now, task.Date, task.Repeat)
 			if err != nil {
 				slog.Warn("addTask: NextDate failed", "repeat", task.Repeat, "error", err)
+				data, err := json.Marshal(map[string]string{"error": err.Error()})
+				if err != nil {
+					slog.Error("addTask: failed to marshal response", "error", err)
+					http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusInternalServerError)
+					return
+				}
 				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				if _, err = w.Write(data); err != nil {
+					slog.Error("addTask: failed to write response", "error", err)
+				}
 				return
 			}
 			slog.Debug("addTask: next occurrence computed", "next_date", task.Date)
@@ -79,13 +119,29 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := db.AddTask(&task)
 	if err != nil {
 		slog.Error("addTask: failed to insert task into DB", "title", task.Title, "error", err)
+		data, err := json.Marshal(map[string]string{"error": err.Error()})
+		if err != nil {
+			slog.Error("addTask: failed to marshal response", "error", err)
+			http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		if _, err = w.Write(data); err != nil {
+			slog.Error("addTask: failed to write response", "error", err)
+		}
 		return
 	}
 
 	slog.Info("task created", "id", id, "title", task.Title, "date", task.Date)
-	json.NewEncoder(w).Encode(map[string]string{"id": id})
+	data, err := json.Marshal(map[string]string{"id": id})
+	if err != nil {
+		slog.Error("addTask: failed to marshal response", "error", err)
+		http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusInternalServerError)
+		return
+	}
+	if _, err = w.Write(data); err != nil {
+		slog.Error("addTask: failed to write response", "error", err)
+	}
 }
 
 func checkRepeatRule(repeat string) error {

@@ -10,7 +10,10 @@ import (
 	"time"
 )
 
-const dateFormat = "20060102"
+const (
+	dateFormat = "20060102"
+	maxTasks   = 50
+)
 
 func nextDayHandler(rw http.ResponseWriter, req *http.Request) {
 	nowStr := req.FormValue("now")
@@ -31,6 +34,15 @@ func nextDayHandler(rw http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
+	if dateStr == "" {
+		http.Error(rw, "missing 'date' parameter", http.StatusBadRequest)
+		return
+	}
+	if repeat == "" {
+		http.Error(rw, "missing 'repeat' parameter", http.StatusBadRequest)
+		return
+	}
+
 	next, err := NextDate(now, dateStr, repeat)
 	if err != nil {
 		slog.Warn("nextdate: NextDate failed", "date", dateStr, "repeat", repeat, "error", err)

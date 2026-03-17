@@ -1,18 +1,16 @@
-package api
+package middleware
 
 import (
 	"crypto/sha256"
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func auth(next http.HandlerFunc) http.HandlerFunc {
+func Auth(pass string, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		pass := os.Getenv("TODO_PASSWORD")
 		if len(pass) > 0 {
 			var tokenStr string
 			if cookie, err := r.Cookie("token"); err == nil {

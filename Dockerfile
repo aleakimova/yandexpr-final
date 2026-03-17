@@ -1,15 +1,12 @@
-FROM golang:1.24 AS builder
+FROM golang:1.24-alpine3.23 AS builder
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=1 GOOS=linux go build -o scheduler ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o scheduler ./cmd/main.go
 
-FROM ubuntu:latest
-RUN apt-get update && apt-get install -y ca-certificates libsqlite3-0 && rm -rf /var/lib/apt/lists/*
+FROM alpine:3.23
 WORKDIR /app
 COPY --from=builder /app/scheduler .
 COPY web/ ./web/
-ENV TODO_PORT=7540
-EXPOSE 7540
 CMD ["./scheduler", "web/"]
